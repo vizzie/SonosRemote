@@ -30,9 +30,6 @@ char ledMode[pinCount] = {'o', 'o', 'o', 'o', 'o', 'o', 'o', 'o', 'o'};
 const int lcdColumns = 16;
 const int lcdRows = 2;
 char lcdState[lcdColumns * lcdRows] = {"Sonos Remote v1\rBooting..."};
-char savedLcdState[lcdColumns * lcdRows] = {" "};
-int revertToSavedCount = 0;
-boolean recallSavedLcd = false;
 
 //Button Model
 int pressedButton = -1;
@@ -97,7 +94,6 @@ void loop() {
     //Serial.println("pressed button is: " + String(pressedButton));
     dimButtonLed(lastPressedButton); //dim any previously pressed button; this probably isn't the right spot for this
     lastPressedButton = -1;
-    if (saveReturnedText()) lcdPrint(lcdState);
   }// end if active process is not running; do I need to do anything while process is running?
   pressedButton = scanButtons(buttonPins, pinCount); //find a newly pressed button
   if (pressedButton != -1 && debounceCount == 0) {
@@ -109,7 +105,6 @@ void loop() {
   }
   //Serial.println("just pressed " + String(pressedButton));
   debounceCount = max(0, (debounceCount - 1));
-  revertToSavedCount = max(0, (revertToSavedCount - 1));
   sleepCountdown = max(0, (sleepCountdown - 1));
   if (sleepCountdown == 0) {
     lcd.setBacklight(LOW);
@@ -119,10 +114,6 @@ void loop() {
   //Serial.println("debounceCount: " + String(debounceCount));
   updateLedBrightness();
   updateLedPins();
-//  if (revertToSavedCount == 0 && recallSavedLcd) {
-//    recallSavedLcd = false;
-//    lcdPrint(savedLcdState);
-//  }
   //delay(5);
 }// end Loop()
 
@@ -152,28 +143,6 @@ char filterAscii(char inputChar) {
     return ' ';
   }
 }//end filterAscii
-
-boolean saveReturnedText() {
-  if (activeProcess.available() > 0) {
-    strncpy(savedLcdState, lcdState, lcdColumns * lcdRows);
-    revertToSavedCount = 10000;
-    recallSavedLcd = true;
-    int remainingChars = lcdColumns * lcdRows;
-    int c = 0;
-    while (remainingChars > 0) {
-      if (activeProcess.available() != 0) {
-        lcdState[c] = char(activeProcess.read());
-      } else {
-        lcdState[c] = char(' ');
-      }
-      remainingChars --;
-      c ++;
-    }
-    return true;
-  } else {
-    return false;
-  }//end if process has returned data
-} // end saveReturnedText
 
 // scanButtons will seek through the buttonPins and see if any are pressed. 
 // It will return only the first button it finds
@@ -318,17 +287,6 @@ void updateLedBrightness() {
     }//end switch
   }//end for pinCount
 } //end updateLeds
-
-//int calcLedBlink(int brightness) {
-//  float sinCalc = (((sin((blinkCounter/255) * 2 * PI)/2) + 0.5) * 255);
-//  if (blinkCounter == 255) {
-//    blinkCounter = 0;
-//  }
-//  blinkCounter += 5;
-//  Serial.println(String(sinCalc) + "/" + String(blinkCounter));
-//  return max(0, min(255, sinCalc));
-//}//end calcLedBlink
-
 
 /////// old sub functions
 
