@@ -94,6 +94,7 @@ void loop() {
     //Serial.println("pressed button is: " + String(pressedButton));
     dimButtonLed(lastPressedButton); //dim any previously pressed button; this probably isn't the right spot for this
     lastPressedButton = -1;
+    if (printReturnedText()) lcdPrint(lcdState);
   }// end if active process is not running; do I need to do anything while process is running?
   pressedButton = scanButtons(buttonPins, pinCount); //find a newly pressed button
   if (pressedButton != -1 && debounceCount == 0) {
@@ -108,6 +109,7 @@ void loop() {
   sleepCountdown = max(0, (sleepCountdown - 1));
   if (sleepCountdown == 0) {
     lcd.setBacklight(LOW);
+    turnOffLeds();
   } else {
     lcd.setBacklight(HIGH);
   }
@@ -143,6 +145,25 @@ char filterAscii(char inputChar) {
     return ' ';
   }
 }//end filterAscii
+
+boolean printReturnedText() {
+  if (activeProcess.available() > 0) {
+    int remainingChars = lcdColumns * lcdRows;
+    int c = 0;
+    while (remainingChars > 0) {
+      if (activeProcess.available() != 0) {
+        lcdState[c] = char(activeProcess.read());
+      } else {
+        lcdState[c] = char(' ');
+      }
+      remainingChars --;
+      c ++;
+    }
+    return true;
+  } else {
+    return false;
+  }//end if process has returned data
+} // end saveReturnedText
 
 // scanButtons will seek through the buttonPins and see if any are pressed. 
 // It will return only the first button it finds
